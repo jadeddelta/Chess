@@ -5,12 +5,15 @@ public class Move {
     private int startY;
     private int endX;
     private int endY;
+    // for undoing moves
+    private int capturedPiece;
 
     public Move(int startX, int startY, int endX, int endY) {
         this.startX = startX;
         this.startY = startY;
         this.endX = endX;
         this.endY = endY;
+        capturedPiece = 0;
     }
 
     // mailbox constructor
@@ -19,6 +22,7 @@ public class Move {
         this.startY = Math.floorDiv(startSlot, 8);
         this.endX = endSlot % 8;
         this.endY = Math.floorDiv(endSlot, 8);
+        capturedPiece = 0;
     }
 
     public int getMailboxStart() {
@@ -43,6 +47,14 @@ public class Move {
 
     public int getEndY() {
         return endY;
+    }
+
+    public void setCapturedPiece(int pieceType) {
+        this.capturedPiece = pieceType;
+    }
+
+    public int getCapturedPiece() {
+        return capturedPiece;
     }
 
     @Override
