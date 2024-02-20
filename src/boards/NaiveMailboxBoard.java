@@ -450,6 +450,11 @@ public class NaiveMailboxBoard extends Board {
     public int getPieceAt(int x, int y) {
         return pieces[pointToSlot(x, y)];
     }
+
+    public void setPieceAt(int x, int y, int piece) {
+        pieces[pointToSlot(x, y)] = piece;
+    }
+
     public int[] getPieces() {
         return pieces;
     }

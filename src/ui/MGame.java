@@ -3,22 +3,27 @@ package ui;
 import boards.Move;
 import boards.NaiveMailboxBoard;
 import engine.MEngine;
-import engine.evaluation.Evaluation;
 import engine.evaluation.MEvaluation;
-import engine.search.MSearch;
+import engine.search.MinABSearch;
+import tests.mailbox.NaiveMailboxBoardExamples;
 
-import java.sql.SQLOutput;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 public class MGame {
-    private static final MEngine engine = new MEngine(new MEvaluation());
-    private static final NaiveMailboxBoard board = new NaiveMailboxBoard();
-    private static final Scanner input = new Scanner(System.in);
+    private MEngine engine;
+    private NaiveMailboxBoard board = new NaiveMailboxBoard();
+    private final static Scanner input = new Scanner(System.in);
 
-    public static void startGame() {
+    public MGame() {
+        this(new MEngine());
+    }
+
+    public MGame(MEngine eng) {
+        this.engine = eng;
+    }
+
+    public void startGame() {
+        board = new NaiveMailboxBoard();
         System.out.println("welcome to the game, gamer");
         boolean isWhite;
         while (true) {
@@ -51,7 +56,7 @@ public class MGame {
         }
     }
 
-    private static int doHumanMove() {
+    private int doHumanMove() {
         Move testMove;
         String start;
         String end;
@@ -69,14 +74,14 @@ public class MGame {
         return board.getLegalMoves().size();
     }
 
-    private static int doComputerMove() {
+    private int doComputerMove() {
         Move m = engine.doTurn(board);
         board.executeMove(m);
         printBoardUI(m);
         return board.getLegalMoves().size();
     }
 
-    private static Move parseMoveFromAlgebraic(String start, String end) {
+    private Move parseMoveFromAlgebraic(String start, String end) {
         if (start.length() != end.length() || start.length() != 2)
             return null;
         char[] startFileRank = start.toCharArray();
@@ -102,7 +107,7 @@ public class MGame {
      * @param c the char to be inspected
      * @return the numerical value of the char, -1 if invalid
      */
-    private static int convertChar(char c) {
+    private int convertChar(char c) {
         int num = Character.getNumericValue(c);
         if (num >= 1 && num <= 8) {
             return num - 1;
@@ -113,7 +118,7 @@ public class MGame {
         }
     }
 
-    private static void printBoardUI(Move m) {
+    private void printBoardUI(Move m) {
         final String RESET = "\033[0m";
         final String BLACK = "\033[0;40m";
         final String WHITE = "\033[0;47m";
@@ -146,26 +151,12 @@ public class MGame {
 
     // idea: hook into search directly to find out the best moves, maybe hook into a
     // debug function?
-    public static void _debugPosition(Move m) {
+    public void _debugPosition(Move m) {
 
-    }
-
-    private static String mapToString(Map<Move, Integer> map) {
-        StringBuilder ret = new StringBuilder();
-        for (Move m : map.keySet()) {
-            ret.append("Move: ")
-                    .append(m.toString())
-                    .append(" Value: ")
-                    .append(map.get(m))
-                    .append(System.lineSeparator());
-        }
-        return ret.toString();
     }
 
     public static void main(String[] args) {
-        MSearch search = new MSearch(-1, 3, new MEvaluation());
-        NaiveMailboxBoard b = new NaiveMailboxBoard();
-        System.out.println(mapToString(search.getBestMoves(b)));
-
+        NaiveMailboxBoard b = NaiveMailboxBoardExamples.getProtectedBishopBoard();
+        System.out.println(b);
     }
 }

@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 // TODO: do we even need this?
 class NaiveMailboxBoardTest {
 
-    static NaiveMailboxBoard pawnBlockBoard;
+
     static NaiveMailboxBoard pawnCaptureBoard;
     static NaiveMailboxBoard knightBlockBoard;
     static NaiveMailboxBoard knightCaptureBoard;
@@ -23,13 +23,6 @@ class NaiveMailboxBoardTest {
 
     @BeforeAll
     public static void setup() {
-        int[] pawnBlockTest = new int[64];
-        pawnBlockTest[0] = 1; pawnBlockTest[8] = 4;
-        pawnBlockTest[2] = 1; pawnBlockTest[10] = -4;
-        pawnBlockTest[12] = 1; pawnBlockTest[28] = 4;
-        pawnBlockTest[14] = 1; pawnBlockTest[30] = -4;
-        pawnBlockBoard = new NaiveMailboxBoard(pawnBlockTest);
-
         int[] pawnCaptureTest = new int[64];
         int[] knightBlockTest = new int[64];
         int[] knightCaptureTest = new int[64];
@@ -47,6 +40,7 @@ class NaiveMailboxBoardTest {
 
     @Test
     public void detectPawnMoves() {
+        NaiveMailboxBoard pawnBlockBoard = NaiveMailboxBoardExamples.getPawnBlockBoard();
         List<Move> allMoves = pawnBlockBoard.getLegalMoves();
 
         // first pawn is blocked by an ally

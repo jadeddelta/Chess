@@ -4,21 +4,19 @@ import boards.Move;
 import boards.NaiveMailboxBoard;
 import engine.evaluation.Evaluation;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
- * The search for SMELLY. Is only meant to search at a specific depth, and find the
- * best moves given the conditions set by the engine.
+ * Intended for Mailbox. Is only meant to search at a specific depth, and find the
+ * best moves given the conditions set by the engine. Uses minimax + alpha-beta.
  */
-public class MSearch {
+public class MinABSearch {
 
     private int seconds;
     private int depth;
     private Evaluation evaluation;
 
-    public MSearch(int seconds, int depth, Evaluation evaluation) {
+    public MinABSearch(int seconds, int depth, Evaluation evaluation) {
         this.seconds = seconds;
         this.depth = depth;
         this.evaluation = evaluation;
@@ -70,10 +68,12 @@ public class MSearch {
             if ((isWhite && moveValue > bestMoveValue) || (!isWhite && moveValue < bestMoveValue))
                 bestMoveValue = moveValue;
 
-            if (isWhite)
+            if (isWhite) {
                 alpha = Integer.max(alpha, bestMoveValue);
-            else
+            }
+            else {
                 beta = Integer.min(beta, bestMoveValue);
+            }
 
             if (alpha >= beta)
                 break;

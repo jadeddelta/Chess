@@ -4,7 +4,7 @@ import boards.Move;
 import boards.NaiveMailboxBoard;
 import engine.evaluation.Evaluation;
 import engine.evaluation.MEvaluation;
-import engine.search.MSearch;
+import engine.search.MinABSearch;
 
 /**
  * The engine for SMELLY. The engine is meant to handle time constraints and delegate
@@ -13,16 +13,24 @@ import engine.search.MSearch;
 public class MEngine {
 
     Evaluation evaluation;
-    MSearch search;
+    MinABSearch search;
 
+    /** Sets up an engine with a search depth of 4, the default
+     * evaluation function, and a MinABSearch algorithm. */
+    public MEngine() {
+        this(new MEvaluation());
+    }
+
+    /** Sets up an engine with a search depth of 4, a provided evaluation
+     * function, and a MinABSearch algorithm. */
     public MEngine(Evaluation evaluation) {
         this.evaluation = evaluation;
-        this.search = new MSearch(-1, 4, evaluation);
+        this.search = new MinABSearch(-1, 4, evaluation);
     }
 
     public MEngine(Evaluation evaluation, int depth) {
         this.evaluation = evaluation;
-        this.search = new MSearch(-1, depth, evaluation);
+        this.search = new MinABSearch(-1, depth, evaluation);
     }
 
     public Move doTurn(NaiveMailboxBoard board) {
