@@ -1,4 +1,4 @@
 package engine;
 
-public class Engine {
+public abstract class Engine {
 }

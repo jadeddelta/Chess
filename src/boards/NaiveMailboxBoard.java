@@ -1,15 +1,21 @@
 package boards;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 public class NaiveMailboxBoard extends Board {
     private final int BOARD_SIZE = 64;
     /** LEFT, UP, RIGHT, DOWN */
     private final int[] PLUS_DIRECTIONS = {-1, 8, 1, -8};
+    /** RIGHT, UP, LEFT, DOWN */
+    private final int[][] PLUS_2D_POINTS = {
+            {1, 0}, {0, 1}, {-1, 0}, {0, -1}
+    };
     /** UPLEFT, UPRIGHT, DOWNLEFT, DOWNRIGHT */
     private final int[] CROSS_DIRECTIONS = {7, 9, -7, -9};
+    /** UPRIGHT, UPLEFT, DOWNRIGHT, DOWNLEFT */
+    private final int[][] CROSS_2D_POINTS = {
+            {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+    };
     /** from top right, clockwise, of pair {x, y}*/
     private final int[][] KNIGHT_2D_POINTS = {
             {1, 2}, {2, 1}, {2, -1}, {1, -2},
@@ -23,9 +29,12 @@ public class NaiveMailboxBoard extends Board {
     private boolean enPassantFlag;
 
     // + is white, - is black
-    private int[] pieces;
+    private final int[] pieces;
 
-    private Stack<Move> moveHistory;
+    private final Stack<Move> moveHistory;
+
+    final char[] LETTERS = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+    final char[] NUMBERS = {'1', '2', '3', '4', '5', '6', '7', '8'};
 
     // default board
     public NaiveMailboxBoard() {
@@ -55,7 +64,23 @@ public class NaiveMailboxBoard extends Board {
             pieces[i] = -pieces[BOARD_SIZE - 1 - i];
         }
 
+        pieces[59] = -pieces[3];
+        pieces[60] = -pieces[4];
+
         moveHistory = new Stack<>();
+    }
+
+    // TODO: maybe refactor into a Setup object with all these fields?
+    public NaiveMailboxBoard(int[] pieces) {
+        this(pieces, new Stack<>());
+    }
+
+    public NaiveMailboxBoard(int[] pieces, Stack<Move> moveHistory) {
+        this(pieces, true, true, true, true, true, false, moveHistory);
+    }
+
+    public NaiveMailboxBoard(int[] pieces, boolean isWhiteTurn) {
+        this(pieces, true, true, true, true, isWhiteTurn, false, new Stack<>());
     }
 
     public NaiveMailboxBoard(int[] pieces,
@@ -77,233 +102,388 @@ public class NaiveMailboxBoard extends Board {
         this.moveHistory = moveHistory;
     }
 
-    public static void main(String[] args) {
-        NaiveMailboxBoard b = new NaiveMailboxBoard();
-        System.out.println(b);
-        List<Move> legalMoveTest = b.getLegalMoves();
-        System.out.println(legalMoveTest);
-        System.out.println(legalMoveTest.size());
+    public NaiveMailboxBoard(NaiveMailboxBoard board) {
+        int[] newPieces = new int[BOARD_SIZE];
+        System.arraycopy(board.getPieces(), 0, newPieces, 0, BOARD_SIZE);
+        this.pieces = newPieces;
+        this.whiteQueenCastleFlag = board.getWhiteQueenCastleFlag();
+        this.whiteKingCastleFlag = board.getWhiteKingCastleFlag();
+        this.blackQueenCastleFlag = board.getBlackQueenCastleFlag();
+        this.blackKingCastleFlag = board.getBlackKingCastleFlag();
+        this.isWhiteTurn = board.isWhiteTurn();
+        this.enPassantFlag = board.getEnPassantFlag();
+        Stack<Move> newHistory = new Stack<>();
+        for (Move m : board.getMoveHistory()) {
+            newHistory.push(m.getClone());
+        }
+        //newHistory.sort(Collections.reverseOrder());
+        this.moveHistory = newHistory;
     }
 
-    public int[] getPieces() {
-        return pieces;
+    public static void main(String[] args) {
+        int[] test = new int[64];
+        test[11] = 1;
+        test[12] = 1;
+        test[13] = 1;
+        test[25] = 1;
+        test[25 + 9] = -1;
+        test[48] = -1;
+        NaiveMailboxBoard b = new NaiveMailboxBoard(test);
+        System.out.println(b);
+        System.out.println(b.getLegalMoves());
     }
 
     public void executeMove(Move m) {
-        int pieceToCapture = pieces[m.getMailboxEnd()];
-        pieces[m.getMailboxEnd()] = pieces[m.getMailboxStart()];
+        pieces[m.getMailboxEnd()] = m.getInitialPiece();
         pieces[m.getMailboxStart()] = 0;
-        m.setCapturedPiece(pieceToCapture);
         moveHistory.push(m);
         isWhiteTurn = !isWhiteTurn;
     }
 
     public void undoMove() {
         Move m = moveHistory.pop();
-        pieces[m.getMailboxStart()] = pieces[m.getMailboxEnd()];
+        pieces[m.getMailboxStart()] = m.getInitialPiece();
         pieces[m.getMailboxEnd()] = m.getCapturedPiece();
         isWhiteTurn = !isWhiteTurn;
     }
 
     public List<Move> getLegalMoves() {
-        List<Move> moves = this.getParalegalMoves();
-
+        List<Move> moves = this.getAllMoves();
+        // equivalent to filtering move -> isCheckedMove(move)
+        moves.removeIf(this::isCheckedMove);
         return moves;
     }
 
-    private List<Move> getParalegalMoves() {
-        List<Move> paralegalMoves = new ArrayList<>();
+    private List<Move> getAllMoves() {
+        List<Move> allMoves = new ArrayList<>();
         for (int i = 0; i < BOARD_SIZE; i++) {
-            if (isCurrentTurnPiece(i)) {
-                List<Move> currentPieceMoves;
-                switch (Math.abs(pieces[i])) {
-                    case 1 -> //PAWN
-                            currentPieceMoves = this.getPawnMoves(i);
-                    case 2 -> //KNIGHT
-                            currentPieceMoves = this.getKnightMoves(i);
-                    case 3 -> //BISHOP
-                            currentPieceMoves = this.getBishopMoves(i);
-                    case 4 -> //ROOK
-                            currentPieceMoves = this.getRookMoves(i);
-                    case 5 -> //QUEEN
-                            currentPieceMoves = this.getQueenMoves(i);
-                    case 6 -> //KING
-                            currentPieceMoves = this.getKingMoves(i);
-                    default -> //SHOULD NEVER HAPPEN
-                            currentPieceMoves = new ArrayList<>();
-                }
-                System.out.printf("Piece: %s with %d moves:%n", pieces[i], currentPieceMoves.size());
-                System.out.println(currentPieceMoves);
-                paralegalMoves.addAll(currentPieceMoves);
+            if (hasAllyPiece(i)) {
+                allMoves.addAll(
+                        getPseudolegalMoves(i)
+                );
             }
         }
-        return paralegalMoves;
+        return allMoves;
+    }
+
+    private boolean isEnemyKingInCheck() {
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            if (hasAllyPiece(i)) {
+                for (Move m : getPseudolegalMoves(i)) {
+                    if (m.isCheckMove()) {
+//                        System.out.printf(
+//                                "check found when doing %s: %s%n",
+//                                moveHistory.peek().toNotation(),
+//                                m.toNotation());
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isCheckedMove(Move m) {
+        boolean isChecked;
+        this.executeMove(m); // so now is enemy turn
+        isChecked = isEnemyKingInCheck();
+        this.undoMove();
+        return isChecked;
+    }
+
+    private List<Move> getPseudolegalMoves(int slot) {
+        switch (Math.abs(pieces[slot])) {
+            case 1 -> {
+                return this.getPawnMoves(slot);
+            }
+            case 2 -> {
+                return this.getKnightMoves(slot);
+            }
+            case 3 -> {
+                return this.getBishopMoves(slot);
+            }
+            case 4 -> {
+                return this.getRookMoves(slot);
+            }
+            case 5 -> {
+                return this.getQueenMoves(slot);
+            }
+            case 6 -> {
+                return this.getKingMoves(slot);
+            }
+        }
+        System.err.println("can't get here");
+        return new ArrayList<>();
     }
 
     private List<Move> getPawnMoves(int slot) {
-        List<Move> pawnMoves = new ArrayList<>();
-        int verticalDirection = isWhiteTurn ? PLUS_DIRECTIONS[1] : PLUS_DIRECTIONS[3];
-        int captureLeft = isWhiteTurn ? CROSS_DIRECTIONS[1] : CROSS_DIRECTIONS[3];
-        int captureRight = isWhiteTurn ? CROSS_DIRECTIONS[0] : CROSS_DIRECTIONS[2];
+        List<Move> pawnMoves = new ArrayList<>(4);
+        boolean isFirstMove = isWhiteTurn ?
+                Math.floorDiv(slot, 8) == 1 :
+                Math.floorDiv(slot, 8) == 6;
+        int[] verticalDir = isWhiteTurn ? PLUS_2D_POINTS[1] : PLUS_2D_POINTS[3];
+        int[] captureLeftDir = isWhiteTurn ? CROSS_2D_POINTS[1] : CROSS_2D_POINTS[3];
+        int[] captureRightDir = isWhiteTurn ? CROSS_2D_POINTS[0] : CROSS_2D_POINTS[2];
+
         int checkSlot;
 
-        if (isEnemyPiece(checkSlot = slot + captureLeft))
-            pawnMoves.add(new Move(slot, checkSlot));
-        if (isEnemyPiece(checkSlot = slot + captureRight))
-            pawnMoves.add(new Move(slot, checkSlot));
+        // check left capture, right capture
+        if ((checkSlot = isValidMove(slot, captureLeftDir, 1)) != -99
+                && hasEnemyPiece(checkSlot))
+            pawnMoves.add(new Move(slot, checkSlot, pieces[slot], pieces[checkSlot]));
+        if ((checkSlot = isValidMove(slot, captureRightDir, 1)) != -99
+                && hasEnemyPiece(checkSlot))
+            pawnMoves.add(new Move(slot, checkSlot, pieces[slot], pieces[checkSlot]));
 
-        if (isAnyPiece(checkSlot = slot + verticalDirection))
+        // is slot directly in front invalid or ok?
+        if ((checkSlot = isValidMove(slot, verticalDir, 1)) == -99
+                || hasAnyPiece(checkSlot))
             return pawnMoves;
         else
-            pawnMoves.add(new Move(slot, checkSlot));
+            pawnMoves.add(new Move(slot, checkSlot, pieces[slot]));
 
-        if (isAnyPiece(checkSlot = slot + 2*verticalDirection))
+        // check for first pawn's double push
+        if ((checkSlot = isValidMove(slot, verticalDir, 2)) == -99
+                || hasAnyPiece(checkSlot)
+                || !isFirstMove)
             return pawnMoves;
         else
-            pawnMoves.add(new Move(slot, checkSlot));
+            pawnMoves.add(new Move(slot, checkSlot, pieces[slot]));
 
         return pawnMoves;
     }
 
     private List<Move> getKnightMoves(int slot) {
-        List<Move> knightMoves = new ArrayList<>();
-        int x = slot % 8;
-        int y = Math.floorDiv(slot, 8);
+        List<Move> knightMoves = new ArrayList<>(8);
+        int checkSlot;
 
-        for (int[] knight_2D_point : KNIGHT_2D_POINTS) {
-            int checkX = x + knight_2D_point[0];
-            int checkY = y + knight_2D_point[1];
-
-            if ((checkX <= 7 && checkX >= 0) && (checkY <= 7 && checkY >= 0)) {
-                int checkSlot = checkX + 8 * checkY;
-                System.out.printf("x: %d, y: %d, ex: %d, ey: %d || s: %d, cs: %d, pcs: %d%n",
-                        x, y, checkX, checkY, slot, checkSlot, pieces[checkSlot]);
-                if (!isCurrentTurnPiece(checkSlot)) {
-                    knightMoves.add(new Move(slot, checkSlot));
-                }
-            }
+        for (int[] knightDir : KNIGHT_2D_POINTS) {
+            if ((checkSlot = isValidMove(slot, knightDir, 1)) != -99)
+                if (!hasAllyPiece(checkSlot))
+                    knightMoves.add(new Move(slot, checkSlot, pieces[slot], pieces[checkSlot]));
         }
-//        int checkSlot;
-//        for (int i : KNIGHT_DIRECTIONS) {
-//            checkSlot = slot + i;
-//            if (isValidSlot(checkSlot) && !isCurrentTurnPiece(checkSlot)) {
-//                System.out.println(new Move(slot, checkSlot));
-//                System.out.println(slot);
-//                System.out.println(checkSlot);
-//                knightMoves.add(new Move(slot, checkSlot));
-//            }
-//        }
         return knightMoves;
     }
 
     private List<Move> getBishopMoves(int slot) {
-        List<Move> bishopMoves = new ArrayList<>();
+        List<Move> bishopMoves = new ArrayList<>(14);
         int checkSlot;
-        for (int i : CROSS_DIRECTIONS) {
-            checkSlot = slot + i;
-            for (; isValidSlot(checkSlot); checkSlot += i) {
-                if (isCurrentTurnPiece(checkSlot)) // blocked by friendly
+
+        for (int[] crossDir : CROSS_2D_POINTS) {
+            int i = 1;
+            while ((checkSlot = isValidMove(slot, crossDir, i)) != -99) {
+                if (hasAllyPiece(checkSlot))
                     break;
-                if (isEnemyPiece(checkSlot)) { // blocked by enemy
-                    bishopMoves.add(new Move(slot, checkSlot));
+                if (hasEnemyPiece(checkSlot)) {
+                    bishopMoves.add(new Move(slot, checkSlot, pieces[slot], pieces[checkSlot]));
                     break;
                 }
-                bishopMoves.add(new Move(slot, checkSlot));
+                bishopMoves.add(new Move(slot, checkSlot, pieces[slot]));
+                i++;
             }
         }
         return bishopMoves;
     }
 
     private List<Move> getRookMoves(int slot) {
-        List<Move> rookMoves = new ArrayList<>();
+        List<Move> rookMoves = new ArrayList<>(14);
         int checkSlot;
-        for (int i : PLUS_DIRECTIONS) {
-            checkSlot = slot + i;
-            for (; isValidSlot(checkSlot); checkSlot += i) {
-                if (isCurrentTurnPiece(checkSlot)) // blocked by friendly
+
+        for (int[] plusDir : PLUS_2D_POINTS) {
+            int i = 1;
+            while ((checkSlot = isValidMove(slot, plusDir, i)) != -99) {
+                if (hasAllyPiece(checkSlot))
                     break;
-                if (isEnemyPiece(checkSlot)) { // blocked by enemy
-                    rookMoves.add(new Move(slot, checkSlot));
+                if (hasEnemyPiece(checkSlot)) {
+                    rookMoves.add(new Move(slot, checkSlot, pieces[slot], pieces[checkSlot]));
                     break;
                 }
-                rookMoves.add(new Move(slot, checkSlot));
+                rookMoves.add(new Move(slot, checkSlot, pieces[slot]));
+                i++;
             }
         }
         return rookMoves;
     }
 
     private List<Move> getQueenMoves(int slot) {
-        List<Move> queenMoves = new ArrayList<>();
+        List<Move> queenMoves = new ArrayList<>(28);
         queenMoves.addAll(getRookMoves(slot));
         queenMoves.addAll(getBishopMoves(slot));
         return queenMoves;
     }
 
     private List<Move> getKingMoves(int slot) {
-        List<Move> kingMoves = new ArrayList<>();
+        List<Move> kingMoves = new ArrayList<>(8);
         int checkSlot;
-        for (int i : CROSS_DIRECTIONS) {
-            checkSlot = slot + i;
-            if (!isValidSlot(checkSlot) || isCurrentTurnPiece(checkSlot))
-                continue;
-            kingMoves.add(new Move(slot, checkSlot));
+        for (int[] crossDir : CROSS_2D_POINTS) {
+            if ((checkSlot = isValidMove(slot, crossDir, 1)) != -99)
+                if (!hasAllyPiece(checkSlot))
+                    kingMoves.add(new Move(slot, checkSlot, pieces[slot], pieces[checkSlot]));
         }
-        for (int i : PLUS_DIRECTIONS) {
-            checkSlot = slot + i;
-            if (!isValidSlot(checkSlot) || isCurrentTurnPiece(checkSlot))
-                continue;
-            kingMoves.add(new Move(slot, checkSlot));
+        for (int[] plusDir : PLUS_2D_POINTS) {
+            if ((checkSlot = isValidMove(slot, plusDir, 1)) != -99)
+                if (!hasAllyPiece(checkSlot))
+                    kingMoves.add(new Move(slot, checkSlot, pieces[slot], pieces[checkSlot]));
         }
         return kingMoves;
     }
 
-    private boolean isAnyPiece(int slot) {
+
+    /**
+     * Checks if a move in a certain direction is valid, and returns the mailbox slot
+     * of the endpoint.
+     * @param slot the initial slot
+     * @param direction the direction of the move in an {x, y} int[] pair
+     * @param factor how much the direction should be multiplied by
+     * @return the endpoint of the move, or -99 if the move is invalid
+     */
+    private int isValidMove(int slot, int[] direction, int factor) {
+        int x = slot % 8;
+        int y = Math.floorDiv(slot, 8);
+        int checkX = x + factor * direction[0];
+        int checkY = y + factor * direction[1];
+        if (isValidPoint(checkX, checkY)) {
+            return pointToSlot(checkX, checkY);
+        }
+        else
+            return -99;
+    }
+
+    private boolean hasAnyPiece(int slot) {
         return pieces[slot] != 0;
     }
 
-    private boolean isCurrentTurnPiece(int slot) {
+    private boolean hasAllyPiece(int slot) {
         if (pieces[slot] == 0) return false;
         else return pieces[slot] > 0 == isWhiteTurn;
     }
 
-    private boolean isEnemyPiece(int slot) {
+    private boolean hasEnemyPiece(int slot) {
         if (pieces[slot] == 0) return false;
         else return pieces[slot] > 0 != isWhiteTurn;
     }
 
     private boolean isValidSlot(int slot) {
-        return (slot >= 0) && (slot < 63);
+        return (slot >= 0) && (slot <= 63);
+    }
+
+    private boolean isValidPoint(int x, int y) {
+        return (x >= 0) && (x <= 7) && (y >= 0) && (y <= 7);
+    }
+
+    private int pointToSlot(int x, int y) {
+        return x + 8*y;
+    }
+
+    // TODO OPTIMIZE: create a field that tracks number of pieces
+    public int getNumberOfPieces() {
+        int ret = 0;
+        for (int i : pieces) {
+            if (i != 0) ret++;
+        }
+        return ret;
+    }
+
+    // TODO OPTIMIZE: these two functions can be replaced when we can make piecelists
+    public List<Integer> getWhitePieces() {
+        List<Integer> list = new ArrayList<>(16);
+        for (int i : pieces) {
+            if (i > 0) list.add(i);
+        }
+        return list;
+    }
+
+    public List<Integer> getBlackPieces() {
+        List<Integer> list = new ArrayList<>(16);
+        for (int i : pieces) {
+            if (i < 0) list.add(i);
+        }
+        return list;
     }
 
     @Override
     public String toString() {
+        return dumpBoard(true); // edit to debug when necessary
+    }
+
+    /** @return the board string, with color or without */
+    public String dumpBoard(boolean withColor) {
         // 0 is bottom left, +1 right, +8 up
-        final char[] LETTERS = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-        final char[] NUMBERS = {'1', '2', '3', '4', '5', '6', '7', '8'};
         StringBuilder sb = new StringBuilder();
         for (int y = 7; y >= 0; y--) {
-            sb.append(LETTERS[y]);
+            sb.append(NUMBERS[y]);
             sb.append(" ");
-            for (int x = 7; x >= 0; x--) {
+            for (int x = 0; x <= 7; x++) {
                 int piece = pieces[x + y * 8];
                 if (piece == 0)
-                    sb.append("   ");
-                else if (piece > 0) {
-                    sb.append("  ");
-                    sb.append(piece);
-                }
+                    sb.append("    ");
                 else {
-                    sb.append(" ");
-                    sb.append(piece);
+                    sb.append(withColor ? " " : "  ");
+                    if (!withColor && piece > 0)
+                        sb.append(" ");
+                    sb.append(withColor ? getColorPiece(piece) : piece);
                 }
             }
             sb.append(System.lineSeparator());
         }
         sb.append("    ");
+        if (!withColor)
+            sb.append(" ");
         for (int i = 0; i < 8; i++) {
-            sb.append(NUMBERS[i]);
-            sb.append("  ");
+            sb.append(LETTERS[i]);
+            sb.append("   ");
         }
         return sb.toString();
+    }
+
+    /** @return a string representation of the piece with ANSI coloring */
+    public String getColorPiece(int piece) {
+        final String RESET = "\033[0m";
+        final String BLACK = "\033[0;40m";
+        final String WHITE = "\033[0;47m";
+
+        return (piece > 0 ? WHITE + " " : BLACK) +
+                piece + " " + RESET;
+    }
+
+    /** @return the piece at the given x, y coordinate */
+    public int getPieceAt(int x, int y) {
+        return pieces[pointToSlot(x, y)];
+    }
+
+    public void setPieceAt(int x, int y, int piece) {
+        pieces[pointToSlot(x, y)] = piece;
+    }
+
+    public int[] getPieces() {
+        return pieces;
+    }
+
+    public boolean isWhiteTurn() {
+        return isWhiteTurn;
+    }
+
+    public boolean getBlackKingCastleFlag() {
+        return blackKingCastleFlag;
+    }
+
+    public boolean getBlackQueenCastleFlag() {
+        return blackQueenCastleFlag;
+    }
+
+    public boolean getWhiteKingCastleFlag() {
+        return whiteKingCastleFlag;
+    }
+
+    public boolean getWhiteQueenCastleFlag() {
+        return whiteQueenCastleFlag;
+    }
+
+    public boolean getEnPassantFlag() {
+        return enPassantFlag;
+    }
+
+    public Stack<Move> getMoveHistory() {
+        return moveHistory;
     }
 }

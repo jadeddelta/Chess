@@ -33,5 +33,7 @@ public class NaiveMailboxPerft {
         System.out.println(perft(board, 1));
         System.out.println(perft(board, 2));
         System.out.println(perft(board, 3)); //TODO: doesn't work!
+
+        // AS OF LAST TRY: perft(3) = 8895 and finds no checks
     }
 }
