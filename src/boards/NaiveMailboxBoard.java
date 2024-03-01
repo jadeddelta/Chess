@@ -1,17 +1,20 @@
 package boards;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
 
+/**
+ * The initial implementation for the Mailbox board representation,
+ * with move generation included.
+ */
 public class NaiveMailboxBoard extends Board {
     private final int BOARD_SIZE = 64;
-    /** LEFT, UP, RIGHT, DOWN */
-    private final int[] PLUS_DIRECTIONS = {-1, 8, 1, -8};
     /** RIGHT, UP, LEFT, DOWN */
     private final int[][] PLUS_2D_POINTS = {
             {1, 0}, {0, 1}, {-1, 0}, {0, -1}
     };
-    /** UPLEFT, UPRIGHT, DOWNLEFT, DOWNRIGHT */
-    private final int[] CROSS_DIRECTIONS = {7, 9, -7, -9};
     /** UPRIGHT, UPLEFT, DOWNRIGHT, DOWNLEFT */
     private final int[][] CROSS_2D_POINTS = {
             {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
@@ -102,6 +105,7 @@ public class NaiveMailboxBoard extends Board {
         this.moveHistory = moveHistory;
     }
 
+    /** clone constructor */
     public NaiveMailboxBoard(NaiveMailboxBoard board) {
         int[] newPieces = new int[BOARD_SIZE];
         System.arraycopy(board.getPieces(), 0, newPieces, 0, BOARD_SIZE);
@@ -117,6 +121,8 @@ public class NaiveMailboxBoard extends Board {
             newHistory.push(m.getClone());
         }
         //newHistory.sort(Collections.reverseOrder());
+        //TODO: right now, does not matter the history. but we should still
+        // find a good way to copy this.
         this.moveHistory = newHistory;
     }
 
@@ -328,6 +334,30 @@ public class NaiveMailboxBoard extends Board {
         return kingMoves;
     }
 
+    private List<Move> getPossibleSlidingMoves(int slot, int[][] dirs) {
+        List<Move> validMoves = new ArrayList<>(28); // max moves is queen w/ 28
+        int checkSlot;
+
+        for (int[] dir : dirs) {
+            int i = 1;
+            // possible optimization: what's the maximum amount of steps, and
+            // if i > max, then end.
+
+            // adds max comparisons, removes 2 integer div, 2 mod, 1 add, 1 mult, 4 comparisons
+            while ((checkSlot = isValidMove(slot, dir, i)) != -99) {
+                if (hasAllyPiece(checkSlot))
+                    break;
+                if (hasEnemyPiece(checkSlot)) {
+                    validMoves.add(new Move(slot, checkSlot, pieces[slot], pieces[checkSlot]));
+                    break;
+                }
+                validMoves.add(new Move(slot, checkSlot, pieces[slot]));
+                i++;
+            }
+        }
+        return validMoves;
+    }
+
 
     /**
      * Checks if a move in a certain direction is valid, and returns the mailbox slot
@@ -444,6 +474,60 @@ public class NaiveMailboxBoard extends Board {
 
         return (piece > 0 ? WHITE + " " : BLACK) +
                 piece + " " + RESET;
+    }
+
+    /**
+     * Turns a <a href="https://www.chessprogramming.org/Forsyth-Edwards_Notation">FEN</a>
+     * position into a NaiveMailboxBoard
+     *
+     * @param fen the FEN string to be processed
+     * @return the board corresponding to the FEN string
+     * @throws IllegalArgumentException if the characters in the board field of the FEN string are invalid
+     */
+    public static NaiveMailboxBoard getBoardFromFEN(String fen) throws IllegalArgumentException {
+        String[] fields = fen.split(" ");
+        assert fields.length == 6;
+        String[] fenBoard = fields[0].split("/");
+        assert fenBoard.length == 8;
+
+        int[] board = new int[64];
+        int i = 0;
+        for (int r = 7; r >= 0; r--) {
+            char[] rank = fenBoard[r].toCharArray();
+            for (char piece : rank) {
+                if (Character.isDigit(piece)) {
+                    int emptySpaces = Character.getNumericValue(piece);
+                    i += emptySpaces;
+                } else {
+                    board[i] = getPieceFromLetter(piece);
+                    i++;
+                }
+            }
+        }
+
+        boolean isWhiteTurn = fields[1].equals("w");
+        //TODO: use remaining fields
+        // castling: KQkq -> bool fields
+        // en passant: idk, wait until we implement en passant (b/c the field is a square)
+        // halfmove clock: wait until we implement halfmove clock
+        // fullmove number: maybe fill the movehistory with dummy moves?
+        return new NaiveMailboxBoard(board, isWhiteTurn);
+    }
+
+    /** turns a character into the integer representation of the piece */
+    private static int getPieceFromLetter(char c) throws IllegalArgumentException {
+        int piece;
+        boolean isCapitalized = Character.isUpperCase(c);
+        switch (Character.toLowerCase(c)) {
+            case 'k' -> piece = 6;
+            case 'q' -> piece = 5;
+            case 'r' -> piece = 4;
+            case 'b' -> piece = 3;
+            case 'n' -> piece = 2;
+            case 'p' -> piece = 1;
+            default -> throw new IllegalArgumentException();
+        }
+        return isCapitalized ? piece : -piece;
     }
 
     /** @return the piece at the given x, y coordinate */

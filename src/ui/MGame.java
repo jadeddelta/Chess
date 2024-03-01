@@ -9,6 +9,8 @@ import tests.mailbox.NaiveMailboxBoardExamples;
 
 import java.util.Scanner;
 
+/** The class that contains the heuristics for a chess game with one
+ * human player and the SMELLY engine as a computer player. */
 public class MGame {
     private MEngine engine;
     private NaiveMailboxBoard board = new NaiveMailboxBoard();
@@ -68,7 +70,6 @@ public class MGame {
             end = input.nextLine().toLowerCase();
         } while ((testMove = parseMoveFromAlgebraic(start, end)) == null);
 
-        System.out.println(testMove);
         board.executeMove(testMove);
         printBoardUI(testMove);
         return board.getLegalMoves().size();
@@ -157,6 +158,8 @@ public class MGame {
 
     public static void main(String[] args) {
         NaiveMailboxBoard b = NaiveMailboxBoardExamples.getProtectedBishopBoard();
+        MinABSearch s = new MinABSearch(-1, 4, new MEvaluation());
         System.out.println(b);
+        System.out.println(s.getBestMove(b));
     }
 }

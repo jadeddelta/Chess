@@ -1,4 +1,23 @@
-# chess program
+# SMELLY ENGINE 
+hi prof, in case you're reading this, thank you. this is a separate 
+version of the repository from my local machine that contains the 
+full, updated code. there are bugs! there are little things that 
+aren't fully implemented! but as of 2024-02-29 ~8pm EST, this is the best
+version of SMELLY that i've been able to make within the past 6 weeks.
+
+hopefully i can transfer this code over to whichever group i am moved over
+towards. i feel like with the code base that i have, and the fact that 
+i've grown very much attached to SMELLY, i'd probably still work on it 
+just so that we have a point of comparison between SMELLY and other chess 
+engines that we happen to make. :)
+
+either way, thank you so much for being understanding of the situation. it's 
+been a pretty harsh start of the semester, so hopefully everything going forward
+will be very smooth.
+
+everything below this line is the original readme
+
+-------
 
 for reference:
 - 1: pawn

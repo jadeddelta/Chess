@@ -1,7 +1,5 @@
 package boards;
 
-import java.io.IOException;
-
 /**
  * A class designed to organize a move in chess.
  * NOTE: This was initially developed for the mailbox implementation.
@@ -128,4 +126,6 @@ public class Move {
     }
 
     // TODO: toAlgebraicNotation
+    // but note: algebraic notation will need board information, so maybe this should be in
+    // naivemailboxboard instead of here
 }

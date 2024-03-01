@@ -7,7 +7,9 @@ import java.util.List;
 
 public class MEvaluation extends Evaluation {
 
-    /** pawn, knight, bishop, rook, queen, king-- value in centipawns */
+    /** pawn, knight, bishop, rook, queen, king-- value in centipawns
+     * | these piece values are the commonly agreed upon values of pieces,
+     * with a high king value to discourage the king from being taken. */
     final static int[] PIECE_VALUES_MIDGAME = {100, 300, 300, 500, 900, 25000};
 
     // remember, 0 -> 7 is bottom left to bottom right, 0 -> 55 is bottom left to top left
@@ -134,6 +136,8 @@ public class MEvaluation extends Evaluation {
             0, 0, 0, 0, 0, 0, 0, 0
     };
 
+    /** these values are derived from
+     * <a href="https://www.chessprogramming.org/Simplified_Evaluation_Function">here.</a>*/
     final static int[][] MIDGAME_PST = {
             PAWN_MIDGAME, KNIGHT_MIDGAME, BISHOP_MIDGAME, ROOK_MIDGAME, QUEEN_MIDGAME, KING_MIDGAME
     };
