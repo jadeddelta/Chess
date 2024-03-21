@@ -42,7 +42,7 @@ public class MGame {
                 System.out.println("not an option, nerdo");
             }
         }
-        System.out.println(board);
+        System.out.println(board.dumpBoard(false));
         if (!isWhite) {
             doComputerMove();
         }
@@ -137,7 +137,7 @@ public class MGame {
         String turnString = !board.isWhiteTurn() ? "White Plays" : "Black Plays";
         String moveString = m.toString();
 
-        String[] outputLines = board.toString().split(System.lineSeparator());
+        String[] outputLines = board.dumpBoard(false).split(System.lineSeparator());
         outputLines[2] = outputLines[2].replaceAll(System.lineSeparator(), "")
                 + evalString;
         outputLines[4] = outputLines[4].replaceAll(System.lineSeparator(), "")

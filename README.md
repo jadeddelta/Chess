@@ -15,10 +15,13 @@ cd Chess
 java -jar release/Chess.jar
 ```
 
-if you would rather not...
+if you would rather not, the repo comes with an IntelliJ run configuration that will automatically 
+run the src/Main.java file. just make sure you set your SDK's version is >= 21. after that, you'll be 
+put into the main game loop where you can play against SMELLY, using a minimax search function w/
+alpha-beta pruning @ depth level 4.
 
 -------
-code note references
+## code note references 
 
 - 1: pawn
 - 2: knight
@@ -26,10 +29,6 @@ code note references
 - 4: rook
 - 5: queen
 - 6: king
-
-any classes prefixed with "M" was originally meant for mailbox implementation.
-
-all psvm methods are just for debugging 
 
 in case we need this mapping (but in intellij, this 
 does not work as chess pieces aren't monospaced):
