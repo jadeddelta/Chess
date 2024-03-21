@@ -1,5 +1,14 @@
-# SMELLY ENGINE 
+# a SMELLY (Simple Material Evaluation, Low Level plaYer) chess AI
+this code is for a class project. to install this on your local machine, 
+first pull it from the repository in a directory of your choosing.
+```shell
+git clone https://github.com/jadeddelta/Chess.git
+```
+development on this program uses IntelliJ, so developing this in the IntelliJ 
+IDE is recommended, as the /.idea/ directory has the build configuration .xml file. 
 
+if you want to straight up run the program, a file exists already in the /release/ folder,
+as the jar file is small enough to be run. 
 
 -------
 code note references
