@@ -7,8 +7,15 @@ git clone https://github.com/jadeddelta/Chess.git
 development on this program uses IntelliJ, so developing this in the IntelliJ 
 IDE is recommended, as the /.idea/ directory has the build configuration .xml file. 
 
-if you want to straight up run the program, a file exists already in the /release/ folder,
-as the jar file is small enough to be run. 
+if you want to straight up run the program without accessing the IntelliJ IDE, 
+a file exists already in the /release/ folder, as the jar file is small enough to be run.
+(note that the compiler specifically targets java 21, so your JRE must be >=java 21)
+```shell
+cd Chess 
+java -jar release/Chess.jar
+```
+
+if you would rather not...
 
 -------
 code note references
